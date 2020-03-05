@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
-from datetime import datetime, timedelta
+from datetime import date, timedelta, datetime
 from dateutil import relativedelta
 
 import babel
