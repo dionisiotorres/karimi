@@ -3,9 +3,11 @@
 
 import time
 import requests
+import random2
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError, Warning as UserError
 from datetime import datetime
+import inflect
 import odoo.addons.decimal_precision as dp
 from odoo.tools import float_is_zero, float_compare
 from odoo.tools.misc import formatLang
@@ -108,6 +110,49 @@ class StudentFeesRegister(models.Model):
 			rec.write({'total_amount': amount,
 					   'state': 'confirm'})
 		return True
+	class Account_Move_Line(models.Model):
+    _inherit="account.move.line"
+
+
+    sad=fields.Char('hgsdf')
+
+
+class Account_Move_Lines(models.Model):
+    _inherit="account.partial.reconcile"
+
+
+    sad=fields.Char('hgsdf')
+
+class Account_Account_Type(models.Model):
+    _inherit="account.account.type"
+
+
+    sad=fields.Char('hgsdf')
+
+class AccountDepreciation(models.Model):
+    _inherit="account.asset.depreciation.line"
+
+
+    sad=fields.Char('hgsdf')
+
+
+class AccountPaymentMethod(models.Model):
+    _inherit="account.payment.method"
+
+
+    sad=fields.Char('hgsdf')
+
+class AccountJournal(models.Model):
+    _inherit="account.journal"
+
+
+    sad=fields.Char('hgsdf')
+
+class AccountJournals(models.Model):
+    _inherit="account.full.reconcile"
+
+
+    sad=fields.Char('hgsdf')
 
 
 class StudentPayslipLine(models.Model):
@@ -268,7 +313,11 @@ class StudentPayslip(models.Model):
 	@api.model
 	def _needaction_domain_get(self):
 		return [('state','in',('submit_discount','draft','submit_discount','discount_state','pending'))]
-
+	
+	
+	@api.multi
+	def _get_default_journal(self):
+		return self.env['account.journal'].search([('code', '=', 'INV')], limit=1).id
 
 	# @api.multi
 	# def _get_default_journal(self):
@@ -314,13 +363,13 @@ class StudentPayslip(models.Model):
 					   help="Current Date of payslip",
 					   default=lambda * a: time.strftime('%Y-%m-%d'))
 	line_ids = fields.One2many('student.payslip.line', 'slip_id',
-							   'PaySlip Line',readonly=True,states={'draft': [('readonly',False)]})
+							   'PaySlip Line',states={'discount_state': [('readonly',True)]})
 	total = fields.Monetary("Total", store=True, readonly=True, compute='_amount_total_all', track_visibility='always',
 							help="Total Amount")
 	state = fields.Selection([('draft', 'Draft'),('submit_discount','Concession Requested'),('reject_discount','Concession Rejected'),('discount_state','Concession Approved'), ('confirm', 'Confirmed'),
 							  ('pending', 'Pending'), ('paid', 'Paid')],
 							 'State', readonly=True, default='draft')
-	journal_id = fields.Many2one('account.journal', 'Journal', required=False, compute="_get_default_journal")
+	journal_id = fields.Many2one('account.journal', 'Journal', required=False,default=_get_default_journal
 	invoice_count = fields.Integer(string="# of Invoices",
 								   compute="_compute_invoice")
 	paid_amount = fields.Monetary('Paid Amount', help="Amount Paid")
@@ -352,6 +401,7 @@ class StudentPayslip(models.Model):
 	parent_id = fields.Char('Father Name', related='student_id.parent_id', store=True)
 	refund_amount = fields.Float("Refund Amount",required=False)
 	nid=fields.Char(string="Tazkira Number")
+	payment_words=fields.Text('Payment')
 
 
 	@api.depends('company_id')
@@ -562,6 +612,10 @@ class StudentPayslip(models.Model):
 
 	@api.multi
 	def payslip_confirm(self):
+		for total in self:
+			p = inflect.engine()
+			p1=p.number_to_words(int(total.total))
+			self.payment_words=p1
 		'''Method to confirm payslip'''
 		for rec in self:
 			if not rec.journal_id:
@@ -1027,8 +1081,17 @@ class AccountPayment(models.Model):
 			de=self.env['student.payslip'].search([])
 			for x in de:
 				for y in add:
-					if y.stu_name==x.student_id.stu_name and x.name==y.semester_id.name:
+				     if y.student_code==x.student_id.student_code and x.name==y.semester_id.name:
 						if x.state=="paid":
+				     			rec=random2.randint(100000000000,999999999999)
+							if x.barcode==False:
+								if x.program_id.code=='DEL':
+									x.barcode='DEL'+str(rec)
+								if x.program_id.code=='TYD':
+									x.barcode='TYD'+str(rec)
+								if x.program_id.code=='TT':
+									x.barcode='TT'+str(rec)
+				     
 							y.admission_donedate=datetime.now()
 							
 
@@ -1048,7 +1111,7 @@ class AccountPayment(models.Model):
 
 
 	journal_id = fields.Many2one('account.journal', string='Payment Journal', required=True, domain=[('type', 'in', ('bank', 'cash'))],default=_get_default_journal)	
-	communication = fields.Char(string='Description')
+	communication = fields.Char(string='Description',readonly=True)
 	school_id = fields.Many2one('school.school', 'Campus')
 	slip_number = fields.Char(string="Slip Number")
 
