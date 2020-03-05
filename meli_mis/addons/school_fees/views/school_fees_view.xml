@@ -606,10 +606,32 @@
                 </xpath>
             </field>
         </record>
+        
+        <record id="student_fee_payslip_mail" model="mail.template">
+            <field name="name">Fee Receipt</field>
+            <field name="model_id" ref="school_fees.model_student_payslip"></field>
+            <field name="email_from">${}</field>
+            <field name="email_to">${object.student_id.email|safe}</field>
+            <field name="subject">Muslim English Institute  Fee Receipt</field>
+            <field name="lang">${object.lang}</field>
+            <field name="auto_delete" eval="True"/>
+            <field name="body_html"><![CDATA[
+                <p>Dear ${object.name},</p>
+                <p> Fee Receipt.. </p>
+                
+            </p>
+            <p> Thanks&Regards </p>
+            <p> CEO </p>
+                <hr/>
+                
+            ]]>
+
+            </field>
+        </record>
 
        
         <!-- memu Items for Fees -->
-        <menuitem id="menu_fees" name="Fees" parent="school.menu_ems" groups="school.group_school_administration,school.group_school_finance_officer" sequence="5"/>
+        <menuitem id="menu_fees" name="Fees" parent="school.menu_students_parents" groups="school.group_school_administration,school.group_school_finance_officer" sequence="5"/>
         <menuitem id="menu_student_payslip" name="Fees Receipts" parent="menu_fees" action="action_student_payslip_form"
                   groups="school.group_school_administration,school.group_school_finance_officer" sequence="111"/>
         <menuitem id="menu_student_payslip_concession" name="Fees Concession Requests" parent="menu_fees" action="action_student_payslip_form_concession" groups="school.group_school_administration,school.group_school_finance_officer" sequence="112"/>
